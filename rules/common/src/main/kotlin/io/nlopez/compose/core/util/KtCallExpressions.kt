@@ -110,5 +110,13 @@ fun KtCallExpression.isFullyShadowed(
     // Using any { } here would incorrectly drop calls where one argument is a shadowed lambda-local
     // modifier but another argument is a genuine outer-modifier alias.
     val ancestorNames = ancestorsParameterNamesSequence(stopAt = origin).toSet()
-    return currentNames.all { it in ancestorNames }
+
+    // A modifier alias is also effectively shadowed when a nested val redeclares the same name
+    // (e.g. `val rootModifier = modifier.padding(8.dp)` inside a shadow lambda). If walk-back
+    // finds more than one declaration for a name, the closer one hides the outer alias.
+    val locallyRedeclaredAliases = currentNames.filter { name ->
+        findShadowingRedeclarations(name, stopAt = origin).take(2).count() > 1
+    }.toSet()
+
+    return currentNames.all { it in ancestorNames || it in locallyRedeclaredAliases }
 }

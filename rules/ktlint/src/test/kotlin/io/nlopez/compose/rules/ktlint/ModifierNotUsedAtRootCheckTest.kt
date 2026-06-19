@@ -204,6 +204,25 @@ class ModifierNotUsedAtRootCheckTest {
     }
 
     @Test
+    fun `passes when a nested lambda redeclares the outer modifier alias and uses it in a then chain`() {
+        @Language("kotlin")
+        val code =
+            """
+                @Composable
+                fun Something(modifier: Modifier = Modifier) {
+                    val rootModifier = modifier
+                    Column {
+                        Slot { modifier: Modifier ->
+                            val rootModifier = modifier.padding(8.dp)
+                            Row(modifier = Modifier.then(rootModifier)) {}
+                        }
+                    }
+                }
+            """.trimIndent()
+        modifierRuleAssertThat(code).hasNoLintViolations()
+    }
+
+    @Test
     fun `errors when outer modifier alias is in then arg and shadowed modifier is chain receiver`() {
         @Language("kotlin")
         val code =

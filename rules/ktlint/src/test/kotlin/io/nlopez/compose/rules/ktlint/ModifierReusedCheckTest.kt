@@ -670,6 +670,25 @@ class ModifierReusedCheckTest {
     }
 
     @Test
+    fun `passes when a nested lambda redeclares the outer modifier alias and uses it in a then chain`() {
+        @Language("kotlin")
+        val code =
+            """
+                @Composable
+                fun Something(modifier: Modifier) {
+                    val rootModifier = modifier
+                    Column(modifier = rootModifier) {
+                        Slot { modifier: Modifier ->
+                            val rootModifier = modifier.padding(8.dp)
+                            Row(modifier = Modifier.then(rootModifier)) {}
+                        }
+                    }
+                }
+            """.trimIndent()
+        modifierRuleAssertThat(code).hasNoLintViolations()
+    }
+
+    @Test
     fun `passes when the modifier is followed by an early return`() {
         @Language("kotlin")
         val code =
